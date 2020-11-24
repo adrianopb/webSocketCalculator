@@ -21,27 +21,72 @@
         </div>
     </nav>
     <div class="container mt-5">
-        <form action="/calculator.js" class="row">
-            <div class="form-group col-4">
+        <div class="row">
+            <div class="form-group col-3">
                 <label for=first_number>Primeiro Número</label>
                 <input type="number" class="form-control" id="first_number" aria-describedby="first_number">
             </div>
-            <div class="form-group col-4">
+            <div class="form-group col-3">
                 <label for="operator">Operação (símbolo ou texto)</label>
                 <input type="text" class="form-control" id="operator" aria-describedby="operator_helper">
-                <small id="operator_help" class="form-text text-muted">Exemplo: para somar digitar + ou mais</small>
+                <small id="operator_help" class="form-text text-muted">Operadores válidos: +, soma, -, substrair, /, dividir, *, multiplicar</small>
             </div>
-            <div class="form-group col-4">
+            <div class="form-group col-3">
                 <label for="second_number">Segundo Número</label>
                 <input type="number" class="form-control" id="second_number" aria-describedby="second_number">
             </div>
+            <div class="form-group col-3">
+                <label for="answer">Resposta</label>
+                <input type="text" class="form-control" id="answer" aria-describedby="answer" readonly>
+            </div>
             <div class="col-12">
-                <button type="submit" class="btn btn-primary float-right">Calcular</button>
+                <button type="submit" onclick="submitMath()" class="btn btn-primary float-right">Calcular</button>
             </div>
         </form>
     </div>
     
     <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js" integrity="sha384-DfXdz2htPH0lsSSs5nCTpuj/zy4C+OGpamoFVy38MVBnE+IbbVYUew+OrCXaRkfj" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.5.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-ho+j7jyWK8fNQe+A12Hb8AhRq26LrZ/JpcUGGOn+Y7RsweNrtN/tE3MoK7ZeZDyx" crossorigin="anonymous"></script>
+    <script>
+        $(document).ready(() => {
+            window.WebSocket = window.WebSocket || window.MozWebSocket;
+            const wsClient = new WebSocket('ws://localhost:3000');
+            let answer = $('#answer');
+    
+            wsClient.onopen = () => {
+                console.log('Conexão com servidor websocket estabelecida');
+            };
+    
+            wsClient.onerror = (error) => {
+                console.log(`Erro durante comunicação com servidor websocket: ${error.message}`);
+            };
+    
+            wsClient.onmessage = (message) => {
+                let json;
+                try {
+                    json = JSON.parse(message.data);
+                } catch (e) {
+                    console.log('Erro ao realizar parse da resposta do servidor websocket. Dados: ', message.data);
+                    return;
+                }
+
+                answer.val(json.content);
+            };
+
+            submitMath = () => {
+                let first_number = $('#first_number').val(),
+                    operator = $('#operator').val(),
+                    second_number = $('#second_number').val();
+                
+                let msg = {
+                    "first_number": first_number.toString(),
+                    "operator": operator.toString(),
+                    "second_number": second_number.toString(),
+                }
+
+                wsClient.send(JSON.stringify(msg));
+            };
+        });
+    </script>
   </body>
 </html>

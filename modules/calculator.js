@@ -38,9 +38,21 @@ const div = (x,y) => {
     return result;
 }
 
+const operationsLibrary = {
+    '+' : sum,
+    'somar' : sum,
+    '-' : sub,
+    'subtrair' : sub,
+    '/' : div,
+    'dividir' : div,
+    '*' : mult,
+    'multiplicar' : mult,
+}
+
 module.exports = {
     sum,
     sub,
     mult,
     div,
+    operationsLibrary
 }

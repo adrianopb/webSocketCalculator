@@ -7,7 +7,8 @@
 var app = require('../app');
 var debug = require('debug')('calculatorexpress:server');
 var http = require('http');
-const WebSocket = require('ws');
+const WebSocket = require('websocket').server;
+const wsApi = require('../websocketModule/api');
 
 /**
  * Get port from environment and store in Express.
@@ -21,7 +22,6 @@ app.set('port', port);
  */
 
 var server = http.createServer(app);
-const wss = new WebSocket.Server({ server });
 
 /**
  * Listen on provided port, on all network interfaces.
@@ -30,6 +30,27 @@ const wss = new WebSocket.Server({ server });
 server.listen(port);
 server.on('error', onError);
 server.on('listening', onListening);
+
+/**
+ * Create and configure WebSocket server.
+ */
+
+const wsServer = new WebSocket({httpServer: server});
+
+wsServer.on('request', (request) => {
+  const connection = request.accept(null, request.origin);
+
+  connection.on('message', (message) => {
+    console.log(`Escutando websocket`);
+    const response = wsApi.processMsg(message);
+    console.log(`Reposta da requisição websocket: ${response.content}`);
+    connection.sendUTF(JSON.stringify(response));
+  });
+
+  connection.on('close', (connection) => {
+    console.log(`${new Date()} - Conexão finalizada.`);
+  });
+});
 
 /**
  * Normalize a port into a number, string, or false.
@@ -90,17 +111,3 @@ function onListening() {
     : 'port ' + addr.port;
   debug('Listening on ' + bind);
 }
-
-wss.on('connection', function connection(ws) {
-  ws.on('message', function incoming(message) {
-      console.log('received: %s', message);
-  });
-  ws.send('something from server');
-});
-
-server.listen(port, function(err) {
-  if (err) {
-      throw err;
-  }
-  console.log(`listening on port ${port}!`);
-});
